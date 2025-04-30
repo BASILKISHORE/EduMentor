@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# EduMentor Azure Deployment Script
+# Sets up Azure resources for the project
+
+echo "Installing Azure CLI if not present..."
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash 2>/dev/null || {
+    echo "Azure CLI installation failed or already installed. Proceeding..."
+}
+
+echo "Logging into Azure (follow prompt to authenticate)..."
+az login
+
+echo "Setting up resource group and resources..."
+az group create --name EduMentorRG --location eastus
+az storage account create --name edumentorstorage --resource-group EduMentorRG --location eastus --sku Standard_LRS
+az functionapp create --resource-group EduMentorRG --name edumentorfunct --storage-account edumentorstorage --runtime python --consumption-plan-name EduMentorPlan --os-type Linux
+
+echo "Configuring Blob Storage container..."
+az storage container create --name content --account-name edumentorstorage
+
+echo "Deploying Function app code..."
+# Note: Replace with actual path to your agents/ folder or deploy manually via VS Code/Azure Portal
+# az functionapp deployment source config-zip -g EduMentorRG -n edumentorfunct --src path/to/agents.zip
+
+echo "Get connection details from Azure Portal and update .env file with:"
+echo "AZURE_FUNCTION_ENDPOINT=https://edumentorfunct.azurewebsites.net/api"
+echo "AZURE_BLOB_STORAGE_URL=https://edumentorstorage.blob.core.windows.net/content"
+echo "AZURE_BLOB_SAS_TOKEN=<your_sas_token>"
+
+echo "Deployment complete! Manually upload agent code to Azure Functions and test."
